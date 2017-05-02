@@ -2,9 +2,11 @@
 what_to_execute={
     "instructions":[("LOAD_VALUE",0), #the first number
                     ("LOAD_VALUE",1),#the second number
-                    ("ADD_TWO_VALUES",None),
+                    ("ADD_TWO_VALUES", None),
+                    ("LOAD_VALUE",2),
+                    ("ADD_TWO_VALUES", None),
                     ("PRINT_ANSWER",None)],
-    "numbers":[7,5]}
+    "numbers":[7,5,3]}
 class Interpreter:
     #stack是编译器的一个属性
     def __init__(self):
