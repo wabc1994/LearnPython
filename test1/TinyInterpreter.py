@@ -1,4 +1,5 @@
 #-*coding:utf-8-*
+# 7+5实现该功能，不含中间变量
 what_to_execute={
     "instructions":[("LOAD_VALUE",0), #the first number
                     ("LOAD_VALUE",1),#the second number
