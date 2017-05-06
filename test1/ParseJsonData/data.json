@@ -1,0 +1,10 @@
+{
+  "map":[
+    {"id":"blabla","is":"o"},
+    {"id":"blabal1","is":"p"}
+  ],
+  "mask":{"id":"valore"},
+  "op_points":"value",
+  "parameter":{"id":"valore"}
+
+}
