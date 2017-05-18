@@ -24,3 +24,10 @@ def _user_slug(profile_url):
     else:
         raise ZhihuError("invalid profile url")
 print _user_slug('https://www.zhihu.com/people/sjk')
+
+
+def _extract_id(url):
+    pattern = re.compile("http://www.zhihu.com/question/\d+/answer/([\w-]+)")
+    match = pattern.search(url)
+    return match.group(1) if match else None
+print _extract_id("http://www.zhihu.com/question/102/answer/ljl")
