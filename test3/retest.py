@@ -31,3 +31,12 @@ def _extract_id(url):
     match = pattern.search(url)
     return match.group(1) if match else None
 print _extract_id("http://www.zhihu.com/question/102/answer/ljl")
+
+
+def unfollow(user_slug=None, profile_url=None):
+    if not any([user_slug, profile_url]):
+        raise ZhihuError("至少指定一个关键字参数")
+    user_slug =profile_url if user_slug is None else user_slug
+    print profile_url
+    print user_slug
+unfollow("dsfja",'http://wfjlafjalf')
