@@ -1,3 +1,5 @@
+# -*-coding:utf-8-*-
+
 #演示了如何将requests和Beautifulsoup结合起来处理数据
 import requests
 from bs4 import  BeautifulSoup
@@ -9,7 +11,8 @@ print result.headers
 c=result.content
 soup=BeautifulSoup(c)
 samples=soup.find_all('a','item-titel')
-samples[0]#输出如下
+samples[0]
+#输出如下
 # <a class="item-title" href="http://cdn.oreilly.com/oreilly/booksamplers/9780596004927_sampler.pdf">
 #Programming Perl
 #</a>
@@ -18,3 +21,5 @@ for a in samples:
     title=a.string.strip()
     data[title]=a.attrs['href']
 #接下来进行
+r1=requests.get('http://api.github.com/user',auth=('user','pass'))
+r1.status_code

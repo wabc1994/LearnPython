@@ -17,7 +17,7 @@ and they lived at the bottom of a well.</p>
 
 <p class="story">...</p>
 """
-from bs4 import BeautifulSoup
+from bs4 import  BeautifulSoup
 from lxml import html
 import requests
 soup=BeautifulSoup(html_doc)
