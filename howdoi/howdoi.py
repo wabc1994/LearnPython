@@ -42,6 +42,7 @@ else:
     SEARCH_URL = 'https://google.com/search?q=site:{0}%20{1}'
     VERIFY_SSL_CERTIFICATE = False
 
+VERSION = '1.1.9'
 URL = os.getenv('HOWDOI_URL') or 'stackoverflow.com'
 ANSWER_HEADER = u('---Answer {0}---\n{1}')
 NO_ANSWER_MSG = '< no answer given>'
@@ -189,6 +190,64 @@ def _enable_cache():
     requests_cache.install_cache(CACHE_FILE)
 
 
+def _clear_cache():
+    for cache in glob.glob('{0}*'.format(CACHE_FILE)):
+        os.remove(cache)
+
+
+def howdoi(args):
+    args['query'] = ' '.join(args['query']).replace('?', '')
+    try:
+        return _get_instructions(args) or 'Sorry, couldn\'t find any help with that topic\n'
+    except (ConnectionError,SSLError):
+        return 'Failed to establish network connection\n'
+
+
+def get_parser():
+    parser = argparse.ArgumentParser(description='instant coding answers via the command line')
+    parser.add_argument('query', metavar='QUERY', type=str, nargs='*',
+                        help='the question to answer')
+    parser.add_argument('-p', '--pos', help='select answer in specified position (default: 1)', default=1, type=int)
+    parser.add_argument('-a', '--all', help='display the full text of the answer',
+                        action='store_true')
+    parser.add_argument('-l', '--link', help='display only the answer link',
+                        action='store_true')
+    parser.add_argument('-c', '--color', help='enable colorized output',
+                        action='store_true')
+    parser.add_argument('-n', '--num-answers', help='number of answers to return', default=1, type=int)
+    parser.add_argument('-C', '--clear-cache', help='clear the cache',
+                        action='store_true')
+    parser.add_argument('-v', '--version', help='displays the current version of howdoi',
+                        action='store_true')
+    return parser
+
+
+def command_line_runner():
+
+    parser = get_parser()
+    args = vars(parser.parse_args())
+
+    if args['version']:
+        print (VERSION)
+        return
+
+    if args['clear_cache']:
+        _clear_cache()
+        print('cache cleared successfully')
+        return
+
+    if not args['query']:
+        parser.print_help()
+        return
+
+    if not os.getenv('HOWDOI_DISABLE_CACHE'):
+        _enable_cache()
+
+    if os.getenv('HOWDOI_COLORIZE'):
+        args['color'] = True
+
+if __name__ == '__main__':
+    command_line_runner()
 
 
 
