@@ -1,6 +1,6 @@
 #!/usr/bin/env python 2.7
 #-*-coding:utf-8-*-
-#Author:liuxiongcheng
+#@Author:liuxiongcheng
 import argparse
 import glob
 import random
@@ -20,7 +20,8 @@ from pyquery import PyQuery as pq
 from requests.exceptions import ConnectionError
 from requests.exceptions import SSLError
 
-if sys.version<'3':
+
+if sys.version < '3':
     import codecs
     from urllib import quote as url_quote
     from urllib import getproxies
@@ -29,19 +30,171 @@ if sys.version<'3':
         return codecs.unicode_escape_decode(x)[0]
 else:
     from urllib.request import getproxies
-    from urllib.parse4 import quote as url_quote
+    from urllib.parse  import quote as url_quote
 
     def u(x):
         return x
 
 if os.getenv('HOWDOI_DISABLE_SSL'):
-    SEARCH_URL='http://google.com/search?q=site:{0}%20{1}'
-    VERIFY_SSL_CERTIFICATE=False
+    SEARCH_URL = 'http://google.com/search?q=site:{0}%20{1}'
+    VERIFY_SSL_CERTIFICATE = False
 else:
     SEARCH_URL = 'https://google.com/search?q=site:{0}%20{1}'
     VERIFY_SSL_CERTIFICATE = False
 
-URL=os.getenv('HOWDOI_URL') or 'stackoverflow.com'
-ANSWER_HEADER=u('---Answer {0}---\n{1}')
-NO_ANSWER_MSG='< no answer given>'
+URL = os.getenv('HOWDOI_URL') or 'stackoverflow.com'
+ANSWER_HEADER = u('---Answer {0}---\n{1}')
+NO_ANSWER_MSG = '< no answer given>'
+XDG_CACHE_DIR = os.environ.get('XDG_CACHE_HOME',
+                               os.path.join(os.path.expanduser('~'), '.cache'))
+USER_AGENTS = ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) Gecko/20100101 Firefox/11.0',
+               'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:22.0) Gecko/20100 101 Firefox/22.0',
+               'Mozilla/5.0 (Windows NT 6.1; rv:11.0) Gecko/20100101 Firefox/11.0',
+               ('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_7_4) AppleWebKit/536.5 (KHTML, like Gecko) '
+                'Chrome/19.0.1084.46 Safari/536.5'),
+               ('Mozilla/5.0 (Windows; Windows NT 6.1) AppleWebKit/536.5 (KHTML, like Gecko) Chrome/19.0.1084.46'
+                'Safari/536.5'), )
+CACHE_DIR = os.path.join(XDG_CACHE_DIR, 'howdoi')
+CACHE_FILE = os.path.join(CACHE_DIR, 'cache{0}'.
+                          format(sys.version_info[0] if sys.version_info[0] == 3 else ''))
+
+
+def get_proxies():
+    proxies = getproxies()
+    filtered_proxies = {}
+    for key, value in proxies.items():
+        if key.startswith('http'):
+            if not value.startswith('http'):
+                filtered_proxies[key] = 'http://%s' % value
+            else:
+                filtered_proxies[key] = value
+
+    return filtered_proxies
+
+
+def _get_result(url):
+    try:
+        return requests.get(url, headers={'User-Agent': random.choice(USER_AGENTS)},proxies=getproxies(),
+                            verify=VERIFY_SSL_CERTIFICATE).text
+    except requests.exceptions.SSLError as e:
+        print('[ERROR] Encountered as SSL Error. Try using HTTP instead of '
+              'HTTPS by setting the environment variable "HOWDOI_DISABLE_SSL".\n')
+        raise e
+
+
+def _get_links(query):
+    result = _get_result(SEARCH_URL.format(URL, url_quote(query)))
+    html = pq(result)
+    return [a.attrib['href'] for a in html('.l')] or \
+        [a.attrib['href'] for a in html('.r')('a')]
+
+
+def get_link_at_pos(links, position):
+    if not links:
+        return False
+
+    if len(links) >= position:
+        link = links[position-1]
+    else:
+        link = links[-1]
+    return link
+
+
+def _format_output(code, args):
+    if not args['color']:
+        return code
+    lexer = None
+    for keyword in args['query'].split()+args['tags']:
+        try:
+            lexer = get_lexer_by_name(keyword)
+            break
+        except ClassNotFound:
+            pass
+
+    if not lexer:
+        try:
+            lexer = guess_lexer(code)
+        except ClassNotFound:
+            return code
+    return highlight(code, lexer, TerminalFormatter(bg='dark'))
+
+
+def _is_question(link):
+    return re.search('question/\d+/', link)
+
+
+def _get_questions(links):
+    return [link for link in links if _is_question(link)]
+
+
+def _get_answer(args, links):
+    links = _get_questions(links)
+    link = get_link_at_pos(links, args['pos'])
+    if not link:
+        return False
+    if args.get('link'):
+        return link
+    page = _get_result(link+'?answertab=votes')
+    html = pq(page)
+
+    first_answer = html('.answer').eq(0)
+    instructions = first_answer.find('pre') or first_answer.find('code')
+    args['tags'] = [t.text for t in html('.post-tag')]
+
+    if not instructions and not args['all']:
+        text = first_answer.find('.post-text').eq(0).text()
+    elif args['all']:
+        texts = []
+        for html_tag in first_answer.items('.post-text > *'):
+            current_text = html_tag.text()
+            if current_text:
+                if html_tag[0].tag in ['pre', 'code']:
+                    texts.append(_format_output(current_text,args))
+                else:
+                    texts.append(current_text)
+        texts.append('\n---\nAnswer from {0}'.format(link))
+        text = '\n'.join(texts)
+    else:
+        text = _format_output(instructions.eq(0).text(), args)
+    if text is None:
+        text = NO_ANSWER_MSG
+    text = text.strip()
+    return text
+
+
+def _get_instructions(args):
+    links = _get_links(args['query'])
+
+    if not links:
+        return False
+    answers = []
+    append_header = args['num_answers'] > 1
+    initial_position = args['pos']
+    for answer_number in range(args['num_answers']):
+        current_position = answer_number + initial_position
+        args['pos'] = current_position
+        answer = _get_answer(args,links)
+        if not answer:
+            continue
+        if append_header:
+            answer = ANSWER_HEADER.format(current_position, answer)
+        answer += '\n'
+        answers.append(answer)
+    return '\n'.join(answers)
+
+
+def _enable_cache():
+    if not os.path.exists(CACHE_DIR):
+        os.makedirs(CACHE_DIR)
+    requests_cache.install_cache(CACHE_FILE)
+
+
+
+
+
+
+
+
+
+
 
