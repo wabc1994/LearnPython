@@ -23,3 +23,9 @@ if _is_question(link_test_one) is not None:
 
 print _get_questions(links_test)
 
+# 测试参数
+
+args = {'query': ['?df', 'adffdf afd ', 'fafad 354g ']}
+args['query'] = ''.join(args['query']).replace('?', '')
+print args
+
