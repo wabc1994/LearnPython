@@ -12,7 +12,7 @@ import os
 
 
 from pygments import highlight
-from pygments.lexers import guess_lexer,get_lexer_by_name
+from pygments.lexers import guess_lexer, get_lexer_by_name
 from pygments.formatters.terminal import TerminalFormatter
 from pygments.util import ClassNotFound
 
@@ -28,12 +28,7 @@ if sys.version < '3':
 
     def u(x):
         return codecs.unicode_escape_decode(x)[0]
-else:
-    from urllib.request import getproxies
-    from urllib.parse  import quote as url_quote
 
-    def u(x):
-        return x
 
 if os.getenv('HOWDOI_DISABLE_SSL'):
     SEARCH_URL = 'http://google.com/search?q=site:{0}%20{1}'
@@ -245,6 +240,12 @@ def command_line_runner():
 
     if os.getenv('HOWDOI_COLORIZE'):
         args['color'] = True
+
+    if sys.version < '3':
+        print(howdoi(args).encode('utf-8', 'ignore'))
+    else:
+        print(howdoi(args))
+
 
 if __name__ == '__main__':
     command_line_runner()
