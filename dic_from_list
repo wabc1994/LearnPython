@@ -1,0 +1,36 @@
+
+
+
+defaultdict(int ,参数) 为了防止抛出异常
+from collections import defaultdic
+sour_file=[("china","shanghai"),("china","beijing"),("USA","LOGANG"),("USA","Washtong")]
+d=defualtdic(list)
+for notion, city in sour_file:
+    dict[notion].append(city)
+print(d.items())
+
+#字典.items 方法返回一个列表
+ 
+#defaultdict(list) 表示创建的字典中value  是一个列表   
+#defaultdict(int)    表示 value 都是 型
+
+> s = 'mississippi'
+>>> d = defaultdict(int)
+>>> for k in s:
+...     d[k] += 1
+...
+>>> d.items()
+[('i', 4), ('p', 2), ('s', 4), ('m', 1)]
+
+使用字典统计字母出现的频数
+
+>>> d_int = defaultdict(int, a=10, b=12, c=13)
+>>> d_int
+defaultdict(<type 'int'>, {'a': 10, 'c': 13, 'b': 12})
+
+
+字典作为一个参数
+>>> kwargs = {'a':10,'b':12,'c':13}
+>>> d_int = defaultdict(int, **kwargs)
+>>> d_int
+defaultdict(<type 'int'>, {'a': 10, 'c': 13, 'b': 12})
